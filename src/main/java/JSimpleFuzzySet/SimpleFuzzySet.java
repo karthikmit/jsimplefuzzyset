@@ -1,5 +1,7 @@
 package JSimpleFuzzySet;
 
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /**
@@ -19,12 +21,20 @@ public class SimpleFuzzySet implements Set<String> {
     Set<String> terms = new TreeSet<>();
     TreeMap<Long, String> scoreMap = new TreeMap<>();
 
+    private TermScoreCalculator termScoreCalculator = new SumOfCharactersBasedTermScoreCalculator();
+    private org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
+
     public SimpleFuzzySet() {
     }
 
     public SimpleFuzzySet(int maxAllowedEditDistance, double scoreDeviationInPercent) {
         this.maxAllowedEditDistance = maxAllowedEditDistance;
         this.scoreDeviationInPercent = scoreDeviationInPercent;
+    }
+
+    public SimpleFuzzySet setTermScoreCalculator(TermScoreCalculator termScoreCalculator) {
+        this.termScoreCalculator = termScoreCalculator;
+        return this;
     }
 
     @Override
@@ -39,7 +49,7 @@ public class SimpleFuzzySet implements Set<String> {
 
     @Override
     public boolean contains(Object o) {
-        String preprocessed = null;
+        String preprocessed;
         if (o instanceof String) {
             preprocessed = preProcessToken((String) o);
         } else {
@@ -48,7 +58,7 @@ public class SimpleFuzzySet implements Set<String> {
         return terms.contains(preprocessed);
     }
 
-    public List<String> fuzzyMatches(String keyTerm, int editDistance) {
+    public List<String> fuzzyMatches(String keyTerm) {
         final String processedKeyTerm = preProcessToken(keyTerm);
         if(terms.contains(processedKeyTerm)) {
             return new ArrayList<String>() {{
@@ -56,16 +66,12 @@ public class SimpleFuzzySet implements Set<String> {
             }};
         } else {
             ArrayList<String> results = new ArrayList<>();
-            long scoreOfTerm = TermScoreCalculator.calculate(processedKeyTerm);
-            System.out.println("Score for " + processedKeyTerm + " : " + scoreOfTerm);
+            long scoreOfTerm = termScoreCalculator.calculate(processedKeyTerm);
+            logger.info("Score for " + processedKeyTerm + " : " + scoreOfTerm);
+
             long start = (long) (scoreOfTerm - Math.floor(scoreOfTerm * scoreDeviationInPercent));
-            if(start < Long.MIN_VALUE) {
-                start = Long.MIN_VALUE;
-            }
             long end = (long) (scoreOfTerm + Math.floor(scoreOfTerm * scoreDeviationInPercent));
-            if(end > Long.MAX_VALUE) {
-                end = Long.MAX_VALUE;
-            }
+
             SortedMap<Long, String> subMap = scoreMap.subMap(start, end);
 
             for(String match : subMap.values()) {
@@ -93,21 +99,20 @@ public class SimpleFuzzySet implements Set<String> {
         int[][] table = new int[input.length()][target.length()];
         Map<Character, Integer> sourceIndexByCharacter = new HashMap<>();
         if (input.charAt(0) != target.charAt(0)) {
-            table[0][0] = Math.min(1, 1 + 1);
+            table[0][0] = 1;
         }
         sourceIndexByCharacter.put(input.charAt(0), 0);
         for (int i = 1; i < input.length(); i++) {
             int deleteDistance = table[i - 1][0] + 1;
-            int insertDistance = (i + 1) * 1 + 1;
-            int matchDistance = i * 1
-                    + (input.charAt(i) == target.charAt(0) ? 0 : 1);
+            int insertDistance = (i + 1) + 1;
+            int matchDistance = i + (input.charAt(i) == target.charAt(0) ? 0 : 1);
             table[i][0] = Math.min(Math.min(deleteDistance, insertDistance),
                     matchDistance);
         }
         for (int j = 1; j < target.length(); j++) {
-            int deleteDistance = (j + 1) * 1 + 1;
+            int deleteDistance = (j + 1) + 1;
             int insertDistance = table[0][j - 1] + 1;
-            int matchDistance = j * 1
+            int matchDistance = j
                     + (input.charAt(0) == target.charAt(j) ? 0 : 1);
             table[0][j] = Math.min(Math.min(deleteDistance, insertDistance),
                     matchDistance);
@@ -136,8 +141,8 @@ public class SimpleFuzzySet implements Set<String> {
                     } else {
                         preSwapCost = table[Math.max(0, iSwap - 1)][Math.max(0, jSwap - 1)];
                     }
-                    swapDistance = preSwapCost + (i - iSwap - 1) * 1
-                            + (j - jSwap - 1) * 1 + 1;
+                    swapDistance = preSwapCost + (i - iSwap - 1)
+                            + (j - jSwap - 1) + 1;
                 } else {
                     swapDistance = Integer.MAX_VALUE;
                 }
@@ -167,7 +172,7 @@ public class SimpleFuzzySet implements Set<String> {
     @Override
     public boolean add(String s) {
         s = preProcessToken(s);
-        Long score = TermScoreCalculator.calculate(s);
+        Long score = termScoreCalculator.calculate(s);
         System.out.println("Score for " + s + " : " + score);
         scoreMap.put(score, s);
 
