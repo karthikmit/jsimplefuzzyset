@@ -67,7 +67,7 @@ public class SimpleFuzzySet implements Set<String> {
         } else {
             ArrayList<String> results = new ArrayList<>();
             long scoreOfTerm = termScoreCalculator.calculate(processedKeyTerm);
-            logger.info("Score for " + processedKeyTerm + " : " + scoreOfTerm);
+            logger.debug("Score for " + processedKeyTerm + " : " + scoreOfTerm);
 
             long start = (long) (scoreOfTerm - Math.floor(scoreOfTerm * scoreDeviationInPercent));
             long end = (long) (scoreOfTerm + Math.floor(scoreOfTerm * scoreDeviationInPercent));
@@ -173,7 +173,7 @@ public class SimpleFuzzySet implements Set<String> {
     public boolean add(String s) {
         s = preProcessToken(s);
         Long score = termScoreCalculator.calculate(s);
-        System.out.println("Score for " + s + " : " + score);
+        logger.debug("Score for " + s + " : " + score);
         scoreMap.put(score, s);
 
         return terms.add(s);
