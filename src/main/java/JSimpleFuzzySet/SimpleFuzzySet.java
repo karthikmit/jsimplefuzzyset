@@ -19,7 +19,7 @@ public class SimpleFuzzySet implements Set<String> {
     private int maxAllowedEditDistance = 2;
 
     Set<String> terms = new TreeSet<>();
-    TreeMap<Long, String> scoreMap = new TreeMap<>();
+    TreeMap<Long, List<String>> scoreMap = new TreeMap<>();
 
     private TermScoreCalculator termScoreCalculator = new SumOfCharactersBasedTermScoreCalculator();
     private org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -60,11 +60,7 @@ public class SimpleFuzzySet implements Set<String> {
 
     public List<String> fuzzyMatches(String keyTerm) {
         final String processedKeyTerm = preProcessToken(keyTerm);
-        if(terms.contains(processedKeyTerm)) {
-            return new ArrayList<String>() {{
-                add(processedKeyTerm);
-            }};
-        } else {
+
             ArrayList<String> results = new ArrayList<>();
             long scoreOfTerm = termScoreCalculator.calculate(processedKeyTerm);
             logger.debug("Score for " + processedKeyTerm + " : " + scoreOfTerm);
@@ -72,15 +68,16 @@ public class SimpleFuzzySet implements Set<String> {
             long start = (long) (scoreOfTerm - Math.floor(scoreOfTerm * scoreDeviationInPercent));
             long end = (long) (scoreOfTerm + Math.floor(scoreOfTerm * scoreDeviationInPercent));
 
-            SortedMap<Long, String> subMap = scoreMap.subMap(start, end);
+            SortedMap<Long, List<String>> subMap = scoreMap.subMap(start, end);
 
-            for(String match : subMap.values()) {
-                if(SimpleFuzzySet.calculateEditDistance(match, processedKeyTerm) <= maxAllowedEditDistance) {
-                    results.add(match);
+            for(List<String> matchList : subMap.values()) {
+                for(String match : matchList) {
+                    if(SimpleFuzzySet.calculateEditDistance(match, processedKeyTerm) <= maxAllowedEditDistance) {
+                        results.add(match);
+                    }
                 }
             }
             return results;
-        }
     }
 
     // This code for calculating Edit Distance, is hugely inspired from
@@ -174,7 +171,12 @@ public class SimpleFuzzySet implements Set<String> {
         s = preProcessToken(s);
         Long score = termScoreCalculator.calculate(s);
         logger.debug("Score for " + s + " : " + score);
-        scoreMap.put(score, s);
+        if(scoreMap.containsKey(score)) {
+            scoreMap.get(score).add(s);
+        } else {
+            final String finalS = s;
+            scoreMap.put(score, new ArrayList<String>() {{ add(finalS); }} );
+        }
 
         return terms.add(s);
     }

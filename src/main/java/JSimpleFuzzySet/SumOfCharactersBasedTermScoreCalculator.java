@@ -24,6 +24,6 @@ public class SumOfCharactersBasedTermScoreCalculator implements TermScoreCalcula
             }
         }
 
-        return score;
+        return score - 87;
     }
 }
