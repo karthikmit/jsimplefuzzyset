@@ -52,7 +52,7 @@ public class FuzzySearchTests {
 
     @Test
     public void editDistanceTests() {
-        int i = SimpleFuzzySet.calculateEditDistance("Karthik", "Karthi");
+        int i = SimpleFuzzySet.calculateEditDistance("goute", "rooster");
         System.out.println(i);
     }
 }
