@@ -4,7 +4,9 @@ import java.util.*;
 import java.util.regex.Matcher;
 
 /**
- * Created by Karthikeyan S on 9/3/15.
+ *  This metric tree implementation is based on edit distance.
+ *
+ *  Though, theoretically, it has complexity of log n, sometimes, it may get bad due to large amount of overlap in child trees.
  */
 public class MetricTree {
 
@@ -12,9 +14,9 @@ public class MetricTree {
     private MetricTreeNode rootNode;
     private int numCompare = 0;
 
-    public void getNeighborTokens(String key, int distanceAllowed) {
+    public void getNeighborTokens(String searchKey, int distanceAllowed) {
         numCompare = 0;
-        getNeighborsInternal(key, distanceAllowed, rootNode);
+        getNeighborsInternal(searchKey, distanceAllowed, rootNode);
         System.out.println("Comparisons made : " + numCompare);
     }
 
@@ -59,7 +61,7 @@ public class MetricTree {
         constructTree();
     }
 
-    public void printTree() {
+    protected void printTree() {
         ArrayDeque<MetricTreeNode> nodes = new ArrayDeque<>();
 
         nodes.add(this.rootNode);

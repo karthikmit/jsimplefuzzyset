@@ -9,6 +9,8 @@ import java.util.*;
  *  which matches by given Maximum Edit Distance. More edit distance and scoreDeviationInPercent
  *      could result in poor performance.
  *  So, edit distance and relax percent should be judiciously chosen as per the requirement.
+ *
+ *  If the list of tokens is static, please try MetricTree in this package.
  */
 public class SimpleFuzzySet implements Set<String> {
 
